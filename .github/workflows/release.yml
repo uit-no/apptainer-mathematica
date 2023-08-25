@@ -7,25 +7,22 @@ on:
 
 jobs:
   release:
-    name: Create Release
+    name: Create release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Get Latest Tag
+      - name: Get latest tag
         run: |
             # Get the latest tag, we won't build if it's the current
             git fetch --tags
             latest_tag=$(git tag | tail -1)
             echo "latest_tag=$latest_tag" >> $GITHUB_ENV
-
-      - name: Define Repository Name and Release Version
+      - name: Define repository name and release version
         run: |
-            repo=$(echo "${GITHUB_REPOSITORY/\//-}")
             release=$(cat VERSION)
-            echo "reponame=$repo" >> $GITHUB_ENV
             echo "release_tag=$release" >> $GITHUB_ENV
-      - name: Create Release
+      - name: Create release
         id: create_release
         uses: actions/create-release@v1
         if: ${{ env.release_tag != env.latest_tag }}
@@ -43,8 +40,6 @@ jobs:
       - name: Build the singularity container
         if: ${{ env.release_tag != env.latest_tag }}
         run: |
-            repo=$(echo "${GITHUB_REPOSITORY/\//-}")
-
             # For each Singularity* container, build based on the prefix (tag)
             for recipe in $(ls Singularity*); do
                 echo "Building $recipe"
@@ -55,7 +50,7 @@ jobs:
                 fi
                 # Build the container and name by tag
                 echo "Tag is $tag."
-                container="$repo:$tag.sif"
+                container="$tag.sif"
                 singularity build --fakeroot container.sif "$recipe"
                 if [ "$?" == "0" ]; then
                     echo "Successfully built container $container."
@@ -64,7 +59,7 @@ jobs:
                     echo "There was an issue building $container."
                 fi
             done
-      - name: Upload Release Assets
+      - name: Upload release assets
         if: ${{ env.release_tag != env.latest_tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
