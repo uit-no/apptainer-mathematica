@@ -1,12 +1,11 @@
-name: singularity-deploy-test
+name: singularity-test
 
-# run on creation of a release tag
 on:
   pull_request: []
 
 jobs:
   builder:
-    name: Test Container Builds
+    name: Test container builds
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -14,11 +13,9 @@ jobs:
       - uses: eWaterCycle/setup-singularity@v6
         with:
           singularity-version: 3.7.1
-      - name: Build the singularity containers
+      - name: Build the singularity container
         run: |
-            repo=$(echo "${GITHUB_REPOSITORY/\//-}")
-
-            # For each Singularity* container, build based on the prefix (tag) 
+            # For each Singularity* container, build based on the prefix (tag)
             for recipe in $(ls Singularity*); do
                 echo "Building $recipe"
                 tag=$(echo "${recipe/Singularity\./}")
@@ -28,15 +25,12 @@ jobs:
                 fi
                 # Build the container and name by tag
                 echo "Tag is $tag."
-                container="$repo:$tag.sif"
+                container="$tag.sif"
                 singularity build --fakeroot container.sif "$recipe"
                 if [ "$?" == "0" ]; then
-                    echo "Successfully built container $container."                
+                    echo "Successfully built container $container."
                     mv container.sif "$container"
                 else
-                    echo "There was an issue building $container."          
-                fi                
+                    echo "There was an issue building $container."
+                fi
             done
-      - name: Run Additional Tests
-        run: |
-          echo "Run any additional tests here."
