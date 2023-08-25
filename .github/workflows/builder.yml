@@ -2,11 +2,8 @@ name: singularity-deploy
 
 on:
   push:
-    # This branch does not exist! You should update this to be your "production" branch
-    # and ensure that when you work on recipes you only merge to this branch when it's time to release
-    # You can also use another GitHub trigger entirely
     branches:
-      - "main-branch"
+      - "main"
 
 jobs:
   release:
@@ -48,7 +45,7 @@ jobs:
         run: |
             repo=$(echo "${GITHUB_REPOSITORY/\//-}")
 
-            # For each Singularity* container, build based on the prefix (tag) 
+            # For each Singularity* container, build based on the prefix (tag)
             for recipe in $(ls Singularity*); do
                 echo "Building $recipe"
                 tag=$(echo "${recipe/Singularity\./}")
@@ -61,17 +58,17 @@ jobs:
                 container="$repo:$tag.sif"
                 singularity build --fakeroot container.sif "$recipe"
                 if [ "$?" == "0" ]; then
-                    echo "Successfully built container $container."                
+                    echo "Successfully built container $container."
                     mv container.sif "$container"
                 else
-                    echo "There was an issue building $container."          
+                    echo "There was an issue building $container."
                 fi
             done
       - name: Upload Release Assets
         if: ${{ env.release_tag != env.latest_tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           tag_name: ${{ env.release_tag }}
         run: |
-          hub release edit $(find . -type f -name "*.sif" -printf "-a %p ") -m "" "$tag_name" 
+          hub release edit $(find . -type f -name "*.sif" -printf "-a %p ") -m "" "$tag_name"
